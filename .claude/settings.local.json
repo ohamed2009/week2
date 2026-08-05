@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const c = require\\('./postman_collection.json'\\); console.log\\('Valid JSON. Items:', c.item.length\\); c.item.forEach\\(f => console.log\\(' -', f.name, ':', f.item.map\\(i=>i.name\\).join\\(', '\\)\\)\\)\")"
+    ]
+  }
+}

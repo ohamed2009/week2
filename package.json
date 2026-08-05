@@ -1,0 +1,17 @@
+{
+  "name": "microservices-bootcamp",
+  "version": "1.0.0",
+  "description": "Mini e-commerce platform split into independent Node.js/Express microservices.",
+  "private": true,
+  "workspaces": [
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n order,payment -c cyan,green \"npm --workspace services/order-service run dev\" \"npm --workspace services/payment-service run dev\"",
+    "start:order": "npm --workspace services/order-service start",
+    "start:payment": "npm --workspace services/payment-service start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
