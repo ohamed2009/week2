@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "Microservices Bootcamp - Team",
+    "description": "Requests for payment-service (4004) and order-service (4003).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "orderUrl",
+      "value": "http://localhost:4003"
+    },
+    {
+      "key": "paymentUrl",
+      "value": "http://localhost:4004"
+    },
+    {
+      "key": "userId",
+      "value": "REPLACE_WITH_USER_ID"
+    },
+    {
+      "key": "productId",
+      "value": "REPLACE_WITH_PRODUCT_ID"
+    },
+    {
+      "key": "userServiceUrl",
+      "value": "http://localhost:4001"
+    },
+    {
+      "key": "catalogServiceUrl",
+      "value": "http://localhost:4002"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "payment-service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{paymentUrl}}/health",
+              "host": [
+                "{{paymentUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create payment (SUCCESS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order123\",\n  \"userId\": \"user123\",\n  \"amount\": 59.98\n}"
+            },
+            "url": {
+              "raw": "{{paymentUrl}}/payments",
+              "host": [
+                "{{paymentUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create payment (amount <= 0 -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"order123\",\n  \"userId\": \"user123\",\n  \"amount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{paymentUrl}}/payments",
+              "host": [
+                "{{paymentUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get payment by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{paymentUrl}}/payments/REPLACE_WITH_PAYMENT_ID",
+              "host": [
+                "{{paymentUrl}}"
+              ],
+              "path": [
+                "payments",
+                "REPLACE_WITH_PAYMENT_ID"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "order-service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{orderUrl}}/health",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create order (full flow)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{orderUrl}}/orders",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create order (missing fields -> 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{orderUrl}}/orders",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get order by id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{orderUrl}}/orders/REPLACE_WITH_ORDER_ID",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "orders",
+                "REPLACE_WITH_ORDER_ID"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List orders by user",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{orderUrl}}/orders/user/{{userId}}",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "orders",
+                "user",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{userServiceUrl}}/health",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.userId) pm.collectionVariables.set('userId', body.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test.user@example.com\",\n  \"password\": \"Passw0rd!\"\n}"
+            },
+            "url": {
+              "raw": "{{userServiceUrl}}/users/register",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "users",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.token) pm.collectionVariables.set('token', body.token);",
+                  "  if (body.userId) pm.collectionVariables.set('userId', body.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test.user@example.com\",\n  \"password\": \"Passw0rd!\"\n}"
+            },
+            "url": {
+              "raw": "{{userServiceUrl}}/users/login",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "users",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{userServiceUrl}}/users/{{userId}}",
+              "host": [
+                "{{userServiceUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{userId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogServiceUrl}}/health",
+              "host": [
+                "{{catalogServiceUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  const id = body._id || body.id;",
+                  "  if (id) pm.collectionVariables.set('productId', id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sample Product\",\n  \"description\": \"A sample product\",\n  \"price\": 19.99\n}"
+            },
+            "url": {
+              "raw": "{{catalogServiceUrl}}/products",
+              "host": [
+                "{{catalogServiceUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogServiceUrl}}/products",
+              "host": [
+                "{{catalogServiceUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Product By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{catalogServiceUrl}}/products/{{productId}}",
+              "host": [
+                "{{catalogServiceUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Product Price",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 24.99\n}"
+            },
+            "url": {
+              "raw": "{{catalogServiceUrl}}/products/{{productId}}",
+              "host": [
+                "{{catalogServiceUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{catalogServiceUrl}}/products/{{productId}}",
+              "host": [
+                "{{catalogServiceUrl}}"
+              ],
+              "path": [
+                "products",
+                "{{productId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

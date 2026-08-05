@@ -1,0 +1,93 @@
+# Render Blueprint — deploys all six microservices from this monorepo at once.
+# In the Render dashboard: New + -> Blueprint -> pick this repo. Render reads
+# this file and creates the six web services below.
+#
+# Each service listens on the port Render provides via process.env.PORT (our
+# code already reads it), so no port is hardcoded here.
+#
+# Secrets and cross-service URLs are marked `sync: false`: Render will NOT read
+# them from this file, you fill them in the dashboard (see docs/DEPLOY.md).
+services:
+  - type: web
+    name: user-service
+    runtime: node
+    plan: free
+    rootDir: services/user-service
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: catalog-service
+    runtime: node
+    plan: free
+    rootDir: services/catalog-service
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: inventory-service
+    runtime: node
+    plan: free
+    rootDir: services/inventory-service
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: notification-service
+    runtime: node
+    plan: free
+    rootDir: services/notification-service
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: payment-service
+    runtime: node
+    plan: free
+    rootDir: services/payment-service
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+
+  - type: web
+    name: order-service
+    runtime: node
+    plan: free
+    rootDir: services/order-service
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      # These are filled in AFTER the other five services are deployed, with
+      # their public https URLs (see docs/DEPLOY.md).
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: CATALOG_SERVICE_URL
+        sync: false
+      - key: INVENTORY_SERVICE_URL
+        sync: false
+      - key: PAYMENT_SERVICE_URL
+        sync: false
+      - key: NOTIFICATION_SERVICE_URL
+        sync: false
