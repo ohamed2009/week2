@@ -26,7 +26,17 @@ values (here, Render environment variables) differ from local.
    mongodb+srv://.../order-db?retryWrites=true&w=majority
    ```
 
-## 2. Deploy all six services (Render Blueprint)
+## 2. RabbitMQ broker (order-events)
+
+order-service and notification-service talk through RabbitMQ, not HTTP. Any
+managed broker works — e.g. [CloudAMQP](https://www.cloudamqp.com) free tier:
+
+1. Create a free "Little Lemur" instance, copy its **AMQP URL**
+   (`amqps://user:pass@host/vhost`).
+2. You'll paste this same URL into both **order-service** and
+   **notification-service** as `RABBITMQ_URL` in step 4 below.
+
+## 3. Deploy all six services (Render Blueprint)
 
 1. Go to <https://dashboard.render.com> and sign in with GitHub.
 2. **New +** -> **Blueprint**.
@@ -34,29 +44,35 @@ values (here, Render environment variables) differ from local.
    six services.
 4. Click **Apply**. Render creates and starts building all six.
 
-## 3. Set each service's `MONGO_URI`
+## 4. Set each service's `MONGO_URI` and `RABBITMQ_URL`
 
 For every service, open it in Render -> **Environment** -> set `MONGO_URI` to that
-service's connection string from step 1.6 -> **Save** (it redeploys).
+service's connection string from step 1.6. For **order-service** and
+**notification-service**, also set `RABBITMQ_URL` to the CloudAMQP URL from
+step 2 -> **Save** (it redeploys).
 
-## 4. Wire order-service to the other services
+## 5. Wire order-service to the other services
 
-Once the five other services are live, each has a public URL like
+Once the other services are live, each has a public URL like
 `https://user-service-xxxx.onrender.com`. Copy them, then open **order-service**
 -> **Environment** and set:
 
-| Variable                    | Value                                        |
-| --------------------------- | -------------------------------------------- |
-| `USER_SERVICE_URL`          | the deployed user-service URL                |
-| `CATALOG_SERVICE_URL`       | the deployed catalog-service URL             |
-| `INVENTORY_SERVICE_URL`     | the deployed inventory-service URL           |
-| `PAYMENT_SERVICE_URL`       | the deployed payment-service URL             |
-| `NOTIFICATION_SERVICE_URL`  | the deployed notification-service URL        |
+| Variable                | Value                               |
+| ------------------------ | ------------------------------------ |
+| `USER_SERVICE_URL`      | the deployed user-service URL       |
+| `CATALOG_SERVICE_URL`   | the deployed catalog-service URL    |
+| `INVENTORY_SERVICE_URL` | the deployed inventory-service URL  |
+| `PAYMENT_SERVICE_URL`   | the deployed payment-service URL    |
+
+Notifications no longer go through an `order-service` -> `notification-service`
+HTTP call — both already point at the same RabbitMQ broker from step 4, and
+`order-service` publishes an `order.confirmed` event that `notification-service`
+consumes independently.
 
 Use the full `https://...onrender.com` URL, **no trailing slash, no port**. Save
 (order-service redeploys).
 
-## 5. Verify
+## 6. Verify
 
 Hit each health endpoint in the browser:
 `https://<service>.onrender.com/health` -> should return `{ "status": "ok" }`.

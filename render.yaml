@@ -55,6 +55,13 @@ services:
     envVars:
       - key: MONGO_URI
         sync: false
+      # A managed RabbitMQ instance (e.g. CloudAMQP) — see docs/DEPLOY.md.
+      - key: RABBITMQ_URL
+        sync: false
+      - key: RABBITMQ_EXCHANGE
+        value: order-events
+      - key: RABBITMQ_QUEUE
+        value: notification-service-order-confirmed
 
   - type: web
     name: payment-service
@@ -89,5 +96,9 @@ services:
         sync: false
       - key: PAYMENT_SERVICE_URL
         sync: false
-      - key: NOTIFICATION_SERVICE_URL
+      # Same RabbitMQ broker as notification-service — order-service only
+      # publishes to it, it never consumes.
+      - key: RABBITMQ_URL
         sync: false
+      - key: RABBITMQ_EXCHANGE
+        value: order-events

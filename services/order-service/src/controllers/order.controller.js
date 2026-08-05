@@ -5,7 +5,9 @@ const userClient = require('../services/user.client');
 const catalogClient = require('../services/catalog.client');
 const inventoryClient = require('../services/inventory.client');
 const paymentClient = require('../services/payment.client');
-const notificationClient = require('../services/notification.client');
+const { publish: publishEvent } = require('../config/rabbitmq');
+
+const ORDER_EVENTS_ROUTING_KEY = 'order.confirmed';
 
 // Append one entry to the order's internal event log.
 function addEvent(order, type, payload = {}) {
@@ -79,17 +81,19 @@ async function createOrder(req, res, next) {
       throw err;
     }
 
-    // 5. Notify the user. Best-effort: a failure here never fails the order.
+    // 5. Publish the order-confirmed event to RabbitMQ so notification-service
+    //    can pick it up asynchronously. Best-effort, same rule as the HTTP
+    //    call it replaces: RabbitMQ being down must never fail the order.
     try {
-      await notificationClient.sendNotification(
+      await publishEvent(ORDER_EVENTS_ROUTING_KEY, {
+        orderId: order._id.toString(),
         userId,
-        order._id.toString(),
-        `Your order ${order._id} has been confirmed`
-      );
-      addEvent(order, 'NOTIFICATION_SENT', { userId });
-    } catch (notifyErr) {
-      console.warn('notification-service call failed:', notifyErr.message);
-      addEvent(order, 'NOTIFICATION_SKIPPED', { reason: notifyErr.message });
+        message: `Your order ${order._id} has been confirmed`,
+      });
+      addEvent(order, 'NOTIFICATION_PUBLISHED', { userId });
+    } catch (publishErr) {
+      console.warn('rabbitmq publish failed:', publishErr.message);
+      addEvent(order, 'NOTIFICATION_PUBLISH_FAILED', { reason: publishErr.message });
     }
 
     // 6. Confirm and persist.

@@ -30,8 +30,10 @@ step appends an entry to the order's `events` log.
 4. `POST payment-service /payments` — on failure, call
    `inventory-service /inventory/release` to roll the reservation back, then
    abort `402`. Event `PAYMENT_SUCCEEDED` (or `PAYMENT_FAILED`).
-5. `POST notification-service /notifications` — best-effort; a failure here does
-   **not** fail the order. Event `NOTIFICATION_SENT` (or `NOTIFICATION_SKIPPED`).
+5. Publish an `order.confirmed` event to RabbitMQ (`order-events` exchange) so
+   `notification-service` can react asynchronously — best-effort; a failure here
+   does **not** fail the order. Event `NOTIFICATION_PUBLISHED` (or
+   `NOTIFICATION_PUBLISH_FAILED`).
 6. Save the order as `CONFIRMED`, event `ORDER_CONFIRMED`, return `201`.
 
 If any downstream service is unreachable or times out, the order aborts with a
@@ -63,7 +65,8 @@ USER_SERVICE_URL=http://localhost:4001
 CATALOG_SERVICE_URL=http://localhost:4002
 INVENTORY_SERVICE_URL=http://localhost:4005
 PAYMENT_SERVICE_URL=http://localhost:4004
-NOTIFICATION_SERVICE_URL=http://localhost:4006
+RABBITMQ_URL=amqp://localhost
+RABBITMQ_EXCHANGE=order-events
 ```
 
 ## Run
@@ -73,10 +76,30 @@ npm install
 npm run dev
 ```
 
-> A full `POST /orders` needs the four downstream services (user, catalog,
-> inventory, notification) plus payment-service running. Until the teammates'
-> services are merged in, test the payment step and the abort paths (unknown
-> user, unreachable service) on their own.
+> A full `POST /orders` needs user-service, catalog-service, inventory-service
+> and payment-service running (HTTP), plus a reachable RabbitMQ broker for step
+> 5. If RabbitMQ is down, the order still confirms — see `NOTIFICATION_PUBLISH_FAILED`
+> in the event log.
+
+## RabbitMQ
+
+order-service only **publishes**, it never consumes. On every successful
+checkout it publishes to:
+
+| Exchange       | Type  | Routing key      |
+| -------------- | ----- | ----------------- |
+| `order-events` | topic | `order.confirmed` |
+
+Payload:
+
+```json
+{ "orderId": "...", "userId": "...", "message": "Your order ... has been confirmed" }
+```
+
+The publish call is wrapped in try/catch: a broker outage is logged
+(`NOTIFICATION_PUBLISH_FAILED` event) and the order still confirms. See
+[`services/notification-service/README.md`](../notification-service/README.md)
+for the consumer side.
 
 ## Model
 
